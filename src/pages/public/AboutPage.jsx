@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CheckCircle, GraduationCap, MapPin, Calendar } from 'lucide-react';
+import { CheckCircle, GraduationCap, MapPin } from 'lucide-react';
 import { usePortfolio } from '../../contexts/PortfolioContext';
 import { Loading } from '../../components/common';
 
@@ -11,7 +11,8 @@ export const AboutPage = () => {
   }
 
   return (
-    <div className="py-16 sm:py-24">
+    // FIX: Add top padding so fixed navbar doesn't overlap your heading
+    <div className="pt-24 sm:pt-28 lg:pt-32 pb-16 sm:pb-24">
       <div className="container-custom">
         {/* Header */}
         <motion.div
@@ -36,7 +37,7 @@ export const AboutPage = () => {
             className="lg:col-span-2"
           >
             {/* Bio */}
-            <div 
+            <div
               className="prose prose-lg max-w-none text-[var(--text-secondary)] mb-12"
               dangerouslySetInnerHTML={{ __html: about?.longBio || '' }}
             />
@@ -63,6 +64,7 @@ export const AboutPage = () => {
                 </div>
               </div>
             )}
+            
 
             {/* Education */}
             {education && education.length > 0 && (
@@ -71,7 +73,7 @@ export const AboutPage = () => {
                   Education
                 </h2>
                 <div className="space-y-4">
-                  {education.filter(e => e.published).map((edu, index) => (
+                  {education.filter((e) => e.published).map((edu, index) => (
                     <motion.div
                       key={edu.id}
                       initial={{ opacity: 0, y: 20 }}
@@ -88,11 +90,13 @@ export const AboutPage = () => {
                         </h3>
                         <p className="text-[var(--text-secondary)]">{edu.institution}</p>
                         {edu.status && (
-                          <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${
-                            edu.status === 'In Progress' 
-                              ? 'bg-[var(--color-warning-500)]/10 text-[var(--color-warning-500)]'
-                              : 'bg-[var(--color-success-500)]/10 text-[var(--color-success-500)]'
-                          }`}>
+                          <span
+                            className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${
+                              edu.status === 'In Progress'
+                                ? 'bg-[var(--color-warning-500)]/10 text-[var(--color-warning-500)]'
+                                : 'bg-[var(--color-success-500)]/10 text-[var(--color-success-500)]'
+                            }`}
+                          >
                             {edu.status}
                           </span>
                         )}

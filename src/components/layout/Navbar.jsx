@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Sun, Moon, Download, Github, Linkedin, Mail } from 'lucide-react';
+import { Menu, X, Sun, Moon, Download, Code2 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { usePortfolio } from '../../contexts/PortfolioContext';
 
@@ -19,14 +19,11 @@ export const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { profile, settings } = usePortfolio();
+  const { profile } = usePortfolio();
   const location = useLocation();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-
+    const handleScroll = () => setIsScrolled(window.scrollY > 14);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -35,128 +32,127 @@ export const Navbar = () => {
     setIsMobileMenuOpen(false);
   }, [location]);
 
+  const navShell = isScrolled
+    ? 'glass shadow-lg border-b border-[var(--border-default)]'
+    : 'bg-[var(--bg-primary)]/60 backdrop-blur-md border-b border-transparent';
+
   return (
     <>
       <motion.nav
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.5 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled 
-            ? 'glass shadow-lg' 
-            : 'bg-transparent'
-        }`}
+        initial={{ y: -90, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.45 }}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navShell}`}
       >
         <div className="container-custom">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo */}
-            <Link 
-              to="/" 
-              className="flex items-center gap-3 group"
-            >
-              <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-primary-500)] to-[var(--color-accent-500)] flex items-center justify-center overflow-hidden">
-                <span className="text-white font-bold text-lg">
-                  {profile?.name?.charAt(0) || 'M'}
+          {/* Grid guarantees: Left (logo) | Center (nav placeholder) | Right (actions) */}
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center h-20 gap-3">
+            {/* LEFT: Brand (truncate so it never pushes actions inward) */}
+            <div className="min-w-0">
+              <Link to="/" className="flex items-center gap-2 group min-w-0">
+                <span
+                  className="min-w-0 truncate text-[var(--text-primary)] text-xl sm:text-2xl lg:text-3xl leading-none font-display font-semibold tracking-wide"
+                  style={{ fontFamily: 'cursive' }}
+                  title={profile?.name || 'Portfolio'}
+                >
+                  {profile?.name || 'Portfolio'}
                 </span>
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-              </div>
-              <span className="font-display font-bold text-xl text-[var(--text-primary)] hidden sm:block">
-                {profile?.name?.split(' ')[0] || 'Portfolio'}
-              </span>
-            </Link>
+                <span className="shrink-0 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors">
+                  <Code2 size={18} />
+                </span>
+              </Link>
+            </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-1">
+            {/* CENTER: Desktop Navigation only (hidden on mobile) */}
+            <div className="hidden lg:flex items-center justify-center gap-8">
               {navItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  className={({ isActive }) => `
-                    relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300
-                    ${isActive 
-                      ? 'text-[var(--color-primary-500)]' 
-                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
-                    }
-                  `}
+                  className={({ isActive }) =>
+                    `relative text-sm font-medium tracking-wide transition-colors
+                     ${
+                       isActive
+                         ? 'text-[var(--text-primary)]'
+                         : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                     }`
+                  }
                 >
                   {({ isActive }) => (
                     <>
                       {item.label}
                       {isActive && (
                         <motion.div
-                          layoutId="navIndicator"
-                          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[var(--color-primary-500)]"
+                          layoutId="navUnderline"
+                          className="absolute -bottom-2 left-0 right-0 h-[2px] rounded-full bg-[var(--text-primary)]"
                         />
                       )}
                     </>
                   )}
                 </NavLink>
               ))}
+
+              <NavLink
+                to="/resume"
+                className={({ isActive }) =>
+                  `relative text-sm font-medium tracking-wide transition-colors
+                   ${
+                     isActive
+                       ? 'text-[var(--text-primary)]'
+                       : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                   }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    Resume
+                    {isActive && (
+                      <motion.div
+                        layoutId="navUnderline"
+                        className="absolute -bottom-2 left-0 right-0 h-[2px] rounded-full bg-[var(--text-primary)]"
+                      />
+                    )}
+                  </>
+                )}
+              </NavLink>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-3">
-              {/* Social Links */}
-              <div className="hidden md:flex items-center gap-2">
-                {settings?.socialLinks?.github && (
-                  <a
-                    href={settings.socialLinks.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all"
-                  >
-                    <Github size={18} />
-                  </a>
-                )}
-                {settings?.socialLinks?.linkedin && (
-                  <a
-                    href={settings.socialLinks.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all"
-                  >
-                    <Linkedin size={18} />
-                  </a>
-                )}
-              </div>
-
+            {/* RIGHT: Actions (ALWAYS far right) */}
+            <div className="flex items-center justify-end gap-2 lg:gap-3 justify-self-end">
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2.5 rounded-xl bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--border-default)] transition-all"
+                className="relative w-14 h-8 rounded-full border border-[var(--border-default)]
+                           bg-[var(--bg-tertiary)]/70 backdrop-blur
+                           hover:bg-[var(--bg-tertiary)] transition-colors"
                 aria-label="Toggle theme"
               >
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={theme}
-                    initial={{ rotate: -90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: 90, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                  </motion.div>
-                </AnimatePresence>
+                <span
+                  className={`absolute top-1 left-1 w-6 h-6 rounded-full
+                              bg-[var(--bg-card)] shadow-sm transition-transform duration-300
+                              ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}`}
+                />
+                <span className="absolute top-1/2 -translate-y-1/2 left-2 text-[var(--text-muted)]">
+                  <Moon size={14} />
+                </span>
+                <span className="absolute top-1/2 -translate-y-1/2 right-2 text-[var(--text-muted)]">
+                  <Sun size={14} />
+                </span>
               </button>
-
-              {/* Resume Button */}
-              <Link
-                to="/resume"
-                className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[var(--color-primary-500)] to-[var(--color-accent-500)] text-white font-medium text-sm hover:shadow-lg hover:shadow-[var(--color-primary-500)]/25 transition-all"
-              >
-                <Download size={16} />
-                Resume
-              </Link>
 
               {/* Mobile Menu Button */}
               <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2.5 rounded-xl bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--border-default)] transition-all"
+                onClick={() => setIsMobileMenuOpen((v) => !v)}
+                className="lg:hidden p-2.5 rounded-xl bg-[var(--bg-tertiary)] text-[var(--text-primary)]
+                           hover:bg-[var(--border-default)] transition-colors"
                 aria-label="Toggle menu"
               >
                 {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
             </div>
+
+            {/* On mobile we used 3 columns; on desktop we used 3 columns too, but center takes nav.
+               This grid config ensures actions stay pinned right at all sizes. */}
           </div>
         </div>
       </motion.nav>
@@ -172,6 +168,7 @@ export const Navbar = () => {
               onClick={() => setIsMobileMenuOpen(false)}
               className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
             />
+
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
@@ -191,7 +188,7 @@ export const Navbar = () => {
                     <X size={20} />
                   </button>
                 </div>
-                
+
                 <div className="flex-1 overflow-y-auto py-4">
                   {navItems.map((item, index) => (
                     <motion.div
@@ -203,10 +200,11 @@ export const Navbar = () => {
                       <NavLink
                         to={item.path}
                         className={({ isActive }) => `
-                          flex items-center px-6 py-4 text-base font-medium transition-all
-                          ${isActive 
-                            ? 'text-[var(--color-primary-500)] bg-[var(--color-primary-500)]/5 border-r-2 border-[var(--color-primary-500)]' 
-                            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
+                          flex items-center px-6 py-4 text-base font-medium transition-colors
+                          ${
+                            isActive
+                              ? 'text-[var(--text-primary)] bg-[var(--bg-tertiary)] border-r-2 border-[var(--text-primary)]'
+                              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
                           }
                         `}
                       >
@@ -214,47 +212,37 @@ export const Navbar = () => {
                       </NavLink>
                     </motion.div>
                   ))}
+
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: navItems.length * 0.05 }}
+                  >
+                    <NavLink
+                      to="/resume"
+                      className={({ isActive }) => `
+                        flex items-center px-6 py-4 text-base font-medium transition-colors
+                        ${
+                          isActive
+                            ? 'text-[var(--text-primary)] bg-[var(--bg-tertiary)] border-r-2 border-[var(--text-primary)]'
+                            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
+                        }
+                      `}
+                    >
+                      Resume
+                    </NavLink>
+                  </motion.div>
                 </div>
 
                 <div className="p-6 border-t border-[var(--border-default)]">
                   <Link
                     to="/resume"
-                    className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-gradient-to-r from-[var(--color-primary-500)] to-[var(--color-accent-500)] text-white font-medium hover:shadow-lg transition-all"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl
+                               bg-gradient-to-r from-[var(--color-primary-500)] to-[var(--color-accent-500)]  text-white font-medium hover:shadow-lg transition-all"
                   >
                     <Download size={18} />
                     Download Resume
                   </Link>
-                  
-                  <div className="flex items-center justify-center gap-4 mt-6">
-                    {settings?.socialLinks?.github && (
-                      <a
-                        href={settings.socialLinks.github}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-3 rounded-xl bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
-                      >
-                        <Github size={20} />
-                      </a>
-                    )}
-                    {settings?.socialLinks?.linkedin && (
-                      <a
-                        href={settings.socialLinks.linkedin}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-3 rounded-xl bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
-                      >
-                        <Linkedin size={20} />
-                      </a>
-                    )}
-                    {settings?.socialLinks?.email && (
-                      <a
-                        href={`mailto:${settings.socialLinks.email}`}
-                        className="p-3 rounded-xl bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
-                      >
-                        <Mail size={20} />
-                      </a>
-                    )}
-                  </div>
                 </div>
               </div>
             </motion.div>

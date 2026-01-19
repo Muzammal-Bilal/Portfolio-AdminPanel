@@ -1,12 +1,76 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Save, Upload, Plus, Trash2, Image } from 'lucide-react';
 import { usePortfolio } from '../../contexts/PortfolioContext';
 import { Loading, Button, Input, Textarea, Toggle } from '../../components/common';
 import toast from 'react-hot-toast';
 
+const makeId = () => {
+  // Stable id generator with fallback
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const StatRow = memo(function StatRow({ stat, onChange, onRemove }) {
+  return (
+    <div className="flex items-center gap-4">
+      <Input
+        placeholder="Label (e.g., Years Experience)"
+        value={stat.label}
+        onChange={(e) => onChange(stat.id, 'label', e.target.value)}
+        className="flex-1"
+      />
+      <Input
+        placeholder="Value (e.g., 2+)"
+        value={stat.value}
+        onChange={(e) => onChange(stat.id, 'value', e.target.value)}
+        className="w-32"
+      />
+      <button
+        type="button"
+        onClick={() => onRemove(stat.id)}
+        className="p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
+      >
+        <Trash2 size={18} />
+      </button>
+    </div>
+  );
+});
+
+const CtaRow = memo(function CtaRow({ btn, onChange, onRemove }) {
+  return (
+    <div className="flex items-center gap-4 p-4 rounded-xl bg-[var(--bg-tertiary)]">
+      <Input
+        placeholder="Button Text"
+        value={btn.text}
+        onChange={(e) => onChange(btn.id, 'text', e.target.value)}
+        className="flex-1"
+      />
+      <Input
+        placeholder="Link (e.g., /projects)"
+        value={btn.link}
+        onChange={(e) => onChange(btn.id, 'link', e.target.value)}
+        className="flex-1"
+      />
+      <Toggle
+        label="Primary"
+        checked={btn.primary}
+        onChange={(val) => onChange(btn.id, 'primary', val)}
+      />
+      <button
+        type="button"
+        onClick={() => onRemove(btn.id)}
+        className="p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
+      >
+        <Trash2 size={18} />
+      </button>
+    </div>
+  );
+});
+
 export const AdminProfile = () => {
   const { profile, updateProfile, uploadFile, loading } = usePortfolio();
+
   const [formData, setFormData] = useState({
     name: '',
     title: '',
@@ -18,112 +82,133 @@ export const AdminProfile = () => {
     stats: [],
     published: true
   });
+
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (profile) {
-      setFormData({
-        name: profile.name || '',
-        title: profile.title || '',
-        subtitle: profile.subtitle || '',
-        summary: profile.summary || '',
-        profileImage: profile.profileImage || '',
-        resumeUrl: profile.resumeUrl || '',
-        ctaButtons: profile.ctaButtons || [],
-        stats: profile.stats || [],
-        published: profile.published !== false
-      });
-    }
+    if (!profile) return;
+
+    // Normalize incoming arrays: ensure each item has a stable id
+    const normalizedStats = (profile.stats || []).map((s) => ({
+      id: s.id || makeId(),
+      label: s.label || '',
+      value: s.value || ''
+    }));
+
+    const normalizedButtons = (profile.ctaButtons || []).map((b) => ({
+      id: b.id || makeId(),
+      text: b.text || '',
+      link: b.link || '',
+      primary: !!b.primary
+    }));
+
+    setFormData({
+      name: profile.name || '',
+      title: profile.title || '',
+      subtitle: profile.subtitle || '',
+      summary: profile.summary || '',
+      profileImage: profile.profileImage || '',
+      resumeUrl: profile.resumeUrl || '',
+      ctaButtons: normalizedButtons,
+      stats: normalizedStats,
+      published: profile.published !== false
+    });
   }, [profile]);
 
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  }, []);
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
+  const handleImageUpload = useCallback(async (e) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       const url = await uploadFile(file, `profile/${file.name}`);
-      setFormData(prev => ({ ...prev, profileImage: url }));
+      setFormData((prev) => ({ ...prev, profileImage: url }));
       toast.success('Image uploaded!');
-    } catch (error) {
+    } catch {
       toast.error('Failed to upload image');
+    } finally {
+      e.target.value = ''; // allows re-uploading same file without issues
     }
-  };
+  }, [uploadFile]);
 
-  const handleResumeUpload = async (e) => {
-    const file = e.target.files[0];
+  const handleResumeUpload = useCallback(async (e) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       const url = await uploadFile(file, `resume/${file.name}`);
-      setFormData(prev => ({ ...prev, resumeUrl: url }));
+      setFormData((prev) => ({ ...prev, resumeUrl: url }));
       toast.success('Resume uploaded!');
-    } catch (error) {
+    } catch {
       toast.error('Failed to upload resume');
+    } finally {
+      e.target.value = '';
     }
-  };
+  }, [uploadFile]);
 
-  const handleStatChange = (index, field, value) => {
-    const newStats = [...formData.stats];
-    newStats[index] = { ...newStats[index], [field]: value };
-    setFormData(prev => ({ ...prev, stats: newStats }));
-  };
-
-  const addStat = () => {
-    setFormData(prev => ({
+  // Stats (id-based)
+  const handleStatChange = useCallback((id, field, value) => {
+    setFormData((prev) => ({
       ...prev,
-      stats: [...prev.stats, { label: '', value: '' }]
+      stats: prev.stats.map((s) => (s.id === id ? { ...s, [field]: value } : s))
     }));
-  };
+  }, []);
 
-  const removeStat = (index) => {
-    setFormData(prev => ({
+  const addStat = useCallback(() => {
+    setFormData((prev) => ({
       ...prev,
-      stats: prev.stats.filter((_, i) => i !== index)
+      stats: [...prev.stats, { id: makeId(), label: '', value: '' }]
     }));
-  };
+  }, []);
 
-  const handleCtaChange = (index, field, value) => {
-    const newButtons = [...formData.ctaButtons];
-    newButtons[index] = { ...newButtons[index], [field]: value };
-    setFormData(prev => ({ ...prev, ctaButtons: newButtons }));
-  };
-
-  const addCtaButton = () => {
-    setFormData(prev => ({
+  const removeStat = useCallback((id) => {
+    setFormData((prev) => ({
       ...prev,
-      ctaButtons: [...prev.ctaButtons, { text: '', link: '', primary: false }]
+      stats: prev.stats.filter((s) => s.id !== id)
     }));
-  };
+  }, []);
 
-  const removeCtaButton = (index) => {
-    setFormData(prev => ({
+  // CTA Buttons (id-based)
+  const handleCtaChange = useCallback((id, field, value) => {
+    setFormData((prev) => ({
       ...prev,
-      ctaButtons: prev.ctaButtons.filter((_, i) => i !== index)
+      ctaButtons: prev.ctaButtons.map((b) => (b.id === id ? { ...b, [field]: value } : b))
     }));
-  };
+  }, []);
 
-  const handleSubmit = async (e) => {
+  const addCtaButton = useCallback(() => {
+    setFormData((prev) => ({
+      ...prev,
+      ctaButtons: [...prev.ctaButtons, { id: makeId(), text: '', link: '', primary: false }]
+    }));
+  }, []);
+
+  const removeCtaButton = useCallback((id) => {
+    setFormData((prev) => ({
+      ...prev,
+      ctaButtons: prev.ctaButtons.filter((b) => b.id !== id)
+    }));
+  }, []);
+
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     setIsSaving(true);
 
     try {
       await updateProfile(formData);
       toast.success('Profile updated successfully!');
-    } catch (error) {
+    } catch {
       toast.error('Failed to update profile');
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [formData, updateProfile]);
 
-  if (loading) {
-    return <Loading />;
-  }
+  if (loading) return <Loading />;
 
   return (
     <motion.div
@@ -137,7 +222,7 @@ export const AdminProfile = () => {
           <h2 className="text-xl font-display font-bold text-[var(--text-primary)] mb-6">
             Basic Information
           </h2>
-          
+
           <div className="grid md:grid-cols-2 gap-6">
             <Input
               label="Full Name"
@@ -184,7 +269,7 @@ export const AdminProfile = () => {
           <h2 className="text-xl font-display font-bold text-[var(--text-primary)] mb-6">
             Profile Image
           </h2>
-          
+
           <div className="flex items-start gap-6">
             <div className="w-32 h-32 rounded-xl overflow-hidden bg-[var(--bg-tertiary)] flex items-center justify-center flex-shrink-0">
               {formData.profileImage ? (
@@ -211,16 +296,15 @@ export const AdminProfile = () => {
                   className="hidden"
                 />
               </label>
-              {formData.profileImage && (
-                <Input
-                  className="mt-4"
-                  label="Or paste image URL"
-                  name="profileImage"
-                  value={formData.profileImage}
-                  onChange={handleChange}
-                  placeholder="https://..."
-                />
-              )}
+
+              <Input
+                className="mt-4"
+                label="Or paste image URL"
+                name="profileImage"
+                value={formData.profileImage}
+                onChange={handleChange}
+                placeholder="https://..."
+              />
             </div>
           </div>
         </div>
@@ -230,7 +314,7 @@ export const AdminProfile = () => {
           <h2 className="text-xl font-display font-bold text-[var(--text-primary)] mb-6">
             Resume/CV
           </h2>
-          
+
           <div className="space-y-4">
             <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--bg-tertiary)] text-[var(--text-primary)] font-medium cursor-pointer hover:bg-[var(--border-default)] transition-colors">
               <Upload size={18} />
@@ -242,7 +326,7 @@ export const AdminProfile = () => {
                 className="hidden"
               />
             </label>
-            
+
             <Input
               label="Or paste resume URL"
               name="resumeUrl"
@@ -250,7 +334,7 @@ export const AdminProfile = () => {
               onChange={handleChange}
               placeholder="https://..."
             />
-            
+
             {formData.resumeUrl && (
               <p className="text-sm text-[var(--color-success-500)]">
                 ✓ Resume uploaded
@@ -269,30 +353,15 @@ export const AdminProfile = () => {
               Add Stat
             </Button>
           </div>
-          
+
           <div className="space-y-4">
-            {formData.stats.map((stat, index) => (
-              <div key={index} className="flex items-center gap-4">
-                <Input
-                  placeholder="Label (e.g., Years Experience)"
-                  value={stat.label}
-                  onChange={(e) => handleStatChange(index, 'label', e.target.value)}
-                  className="flex-1"
-                />
-                <Input
-                  placeholder="Value (e.g., 2+)"
-                  value={stat.value}
-                  onChange={(e) => handleStatChange(index, 'value', e.target.value)}
-                  className="w-32"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeStat(index)}
-                  className="p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
+            {formData.stats.map((stat) => (
+              <StatRow
+                key={stat.id}
+                stat={stat}
+                onChange={handleStatChange}
+                onRemove={removeStat}
+              />
             ))}
             {formData.stats.length === 0 && (
               <p className="text-[var(--text-muted)] text-center py-4">
@@ -312,35 +381,15 @@ export const AdminProfile = () => {
               Add Button
             </Button>
           </div>
-          
+
           <div className="space-y-4">
-            {formData.ctaButtons.map((btn, index) => (
-              <div key={index} className="flex items-center gap-4 p-4 rounded-xl bg-[var(--bg-tertiary)]">
-                <Input
-                  placeholder="Button Text"
-                  value={btn.text}
-                  onChange={(e) => handleCtaChange(index, 'text', e.target.value)}
-                  className="flex-1"
-                />
-                <Input
-                  placeholder="Link (e.g., /projects)"
-                  value={btn.link}
-                  onChange={(e) => handleCtaChange(index, 'link', e.target.value)}
-                  className="flex-1"
-                />
-                <Toggle
-                  label="Primary"
-                  checked={btn.primary}
-                  onChange={(val) => handleCtaChange(index, 'primary', val)}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeCtaButton(index)}
-                  className="p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
+            {formData.ctaButtons.map((btn) => (
+              <CtaRow
+                key={btn.id}
+                btn={btn}
+                onChange={handleCtaChange}
+                onRemove={removeCtaButton}
+              />
             ))}
           </div>
         </div>
@@ -359,7 +408,7 @@ export const AdminProfile = () => {
             <Toggle
               label="Published"
               checked={formData.published}
-              onChange={(val) => setFormData(prev => ({ ...prev, published: val }))}
+              onChange={(val) => setFormData((prev) => ({ ...prev, published: val }))}
             />
           </div>
         </div>
