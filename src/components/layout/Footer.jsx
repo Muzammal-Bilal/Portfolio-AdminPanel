@@ -146,9 +146,7 @@ export const Footer = () => {
         {/* Bottom Bar */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-12 mt-12 border-t border-[var(--border-default)]">
           <p className="text-sm text-[var(--text-muted)] flex items-center gap-1">
-            © {currentYear} {profile?.name || 'Muzammal Bilal'}. Built with 
-            <Heart size={14} className="text-red-500 fill-red-500" /> 
-            using React
+            © {currentYear} {profile?.name || 'Muzammal Bilal'}. Built with using React
           </p>
           
           <motion.button

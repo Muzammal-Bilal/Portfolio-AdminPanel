@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  User, 
-  Info, 
-  Briefcase, 
-  FolderKanban, 
+import {
+  LayoutDashboard,
+  User,
+  Info,
+  Briefcase,
+  FolderKanban,
   Wrench,
   Award,
   Mail,
@@ -45,6 +45,22 @@ export const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Lock background scroll when mobile sidebar is open
+  useEffect(() => {
+    if (mobileSidebarOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [mobileSidebarOpen]);
+
+  // Auto-close mobile sidebar on route change
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [location.pathname]);
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -56,7 +72,7 @@ export const AdminLayout = () => {
   };
 
   const getCurrentPageTitle = () => {
-    const currentItem = sidebarItems.find(item => item.path === location.pathname);
+    const currentItem = sidebarItems.find((item) => item.path === location.pathname);
     return currentItem?.label || 'Dashboard';
   };
 
@@ -66,7 +82,7 @@ export const AdminLayout = () => {
       <motion.aside
         initial={false}
         animate={{ width: sidebarOpen ? 280 : 80 }}
-        className="fixed top-0 left-0 h-full bg-[var(--bg-card)] border-r border-[var(--border-default)] z-40 hidden lg:block"
+        className="fixed top-0 left-0 h-screen bg-[var(--bg-card)] border-r border-[var(--border-default)] z-40 hidden lg:block"
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
@@ -88,12 +104,15 @@ export const AdminLayout = () => {
                 </motion.div>
               )}
             </AnimatePresence>
+
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2 rounded-lg hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] transition-colors"
+              type="button"
+              aria-label="Toggle sidebar"
             >
-              <ChevronRight 
-                size={20} 
+              <ChevronRight
+                size={20}
                 className={`transition-transform ${sidebarOpen ? 'rotate-180' : ''}`}
               />
             </button>
@@ -108,9 +127,10 @@ export const AdminLayout = () => {
                     to={item.path}
                     className={({ isActive }) => `
                       flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                      ${isActive 
-                        ? 'bg-gradient-to-r from-[var(--color-primary-500)]/10 to-[var(--color-accent-500)]/10 text-[var(--color-primary-500)] border border-[var(--color-primary-500)]/20' 
-                        : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
+                      ${
+                        isActive
+                          ? 'bg-gradient-to-r from-[var(--color-primary-500)]/10 to-[var(--color-accent-500)]/10 text-[var(--color-primary-500)] border border-[var(--color-primary-500)]/20'
+                          : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
                       }
                     `}
                   >
@@ -144,9 +164,11 @@ export const AdminLayout = () => {
               <Home size={20} className="flex-shrink-0" />
               {sidebarOpen && <span className="font-medium">View Site</span>}
             </a>
+
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all"
+              type="button"
             >
               <LogOut size={20} className="flex-shrink-0" />
               {sidebarOpen && <span className="font-medium">Logout</span>}
@@ -161,15 +183,21 @@ export const AdminLayout = () => {
           <button
             onClick={() => setMobileSidebarOpen(true)}
             className="p-2 rounded-lg hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)]"
+            type="button"
+            aria-label="Open sidebar"
           >
             <Menu size={24} />
           </button>
-          <span className="font-display font-bold text-lg text-[var(--text-primary)]">
+
+          <span className="font-display font-bold text-lg text-[var(--text-primary)] truncate max-w-[60vw]">
             {getCurrentPageTitle()}
           </span>
+
           <button
             onClick={toggleTheme}
             className="p-2 rounded-lg hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)]"
+            type="button"
+            aria-label="Toggle theme"
           >
             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </button>
@@ -187,12 +215,15 @@ export const AdminLayout = () => {
               onClick={() => setMobileSidebarOpen(false)}
               className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
             />
+
             <motion.aside
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 bottom-0 w-80 bg-[var(--bg-card)] border-r border-[var(--border-default)] z-50 lg:hidden"
+              className="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-[var(--bg-card)] border-r border-[var(--border-default)] z-50 lg:hidden"
+              role="dialog"
+              aria-modal="true"
             >
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between h-16 px-4 border-b border-[var(--border-default)]">
@@ -204,9 +235,12 @@ export const AdminLayout = () => {
                       Admin
                     </span>
                   </div>
+
                   <button
                     onClick={() => setMobileSidebarOpen(false)}
                     className="p-2 rounded-lg hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)]"
+                    type="button"
+                    aria-label="Close sidebar"
                   >
                     <X size={20} />
                   </button>
@@ -218,12 +252,12 @@ export const AdminLayout = () => {
                       <li key={item.path}>
                         <NavLink
                           to={item.path}
-                          onClick={() => setMobileSidebarOpen(false)}
                           className={({ isActive }) => `
                             flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                            ${isActive 
-                              ? 'bg-gradient-to-r from-[var(--color-primary-500)]/10 to-[var(--color-accent-500)]/10 text-[var(--color-primary-500)]' 
-                              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]'
+                            ${
+                              isActive
+                                ? 'bg-gradient-to-r from-[var(--color-primary-500)]/10 to-[var(--color-accent-500)]/10 text-[var(--color-primary-500)]'
+                                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]'
                             }
                           `}
                         >
@@ -239,14 +273,17 @@ export const AdminLayout = () => {
                   <a
                     href="/"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
                   >
                     <Home size={20} />
                     <span className="font-medium">View Site</span>
                   </a>
+
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10"
+                    type="button"
                   >
                     <LogOut size={20} />
                     <span className="font-medium">Logout</span>
@@ -259,35 +296,36 @@ export const AdminLayout = () => {
       </AnimatePresence>
 
       {/* Main Content */}
-      <main 
+      <main
         className={`
-          min-h-screen pt-16 lg:pt-0 transition-all duration-300
+          min-h-screen transition-all duration-300
+          pt-16 lg:pt-0
           ${sidebarOpen ? 'lg:pl-[280px]' : 'lg:pl-20'}
         `}
       >
-        <div className="p-6 lg:p-8">
-          {/* Page Header */}
+        <div className="p-4 sm:p-6 lg:p-8">
+          {/* Page Header (Desktop Only) */}
           <div className="hidden lg:flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-display font-bold text-[var(--text-primary)]">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-display font-bold text-[var(--text-primary)] truncate">
                 {getCurrentPageTitle()}
               </h1>
-              <p className="text-[var(--text-muted)] mt-1">
-                Manage your portfolio content
-              </p>
+              <p className="text-[var(--text-muted)] mt-1">Manage your portfolio content</p>
             </div>
+
             <div className="flex items-center gap-4">
               <button
                 onClick={toggleTheme}
                 className="p-2.5 rounded-xl bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                type="button"
+                aria-label="Toggle theme"
               >
                 {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
               </button>
+
               <div className="flex items-center gap-3 pl-4 border-l border-[var(--border-default)]">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-primary-500)] to-[var(--color-accent-500)] flex items-center justify-center">
-                  <span className="text-white font-bold">
-                    {profile?.name?.charAt(0) || 'A'}
-                  </span>
+                  <span className="text-white font-bold">{profile?.name?.charAt(0) || 'A'}</span>
                 </div>
                 <div className="hidden xl:block">
                   <p className="text-sm font-medium text-[var(--text-primary)]">

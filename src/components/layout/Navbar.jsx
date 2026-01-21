@@ -24,13 +24,24 @@ export const Navbar = () => {
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 14);
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location]);
+
+  // Prevent background scroll when mobile drawer is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [isMobileMenuOpen]);
 
   const navShell = isScrolled
     ? 'glass shadow-lg border-b border-[var(--border-default)]'
@@ -45,9 +56,9 @@ export const Navbar = () => {
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navShell}`}
       >
         <div className="container-custom">
-          {/* Grid guarantees: Left (logo) | Center (nav placeholder) | Right (actions) */}
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center h-20 gap-3">
-            {/* LEFT: Brand (truncate so it never pushes actions inward) */}
+          {/* Responsive header height: 64px mobile, 80px lg+ */}
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center h-16 lg:h-20 gap-3">
+            {/* LEFT: Brand */}
             <div className="min-w-0">
               <Link to="/" className="flex items-center gap-2 group min-w-0">
                 <span
@@ -63,19 +74,18 @@ export const Navbar = () => {
               </Link>
             </div>
 
-            {/* CENTER: Desktop Navigation only (hidden on mobile) */}
+            {/* CENTER: Desktop Navigation */}
             <div className="hidden lg:flex items-center justify-center gap-8">
               {navItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `relative text-sm font-medium tracking-wide transition-colors
-                     ${
-                       isActive
-                         ? 'text-[var(--text-primary)]'
-                         : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                     }`
+                    `relative text-sm font-medium tracking-wide transition-colors ${
+                      isActive
+                        ? 'text-[var(--text-primary)]'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`
                   }
                 >
                   {({ isActive }) => (
@@ -95,12 +105,11 @@ export const Navbar = () => {
               <NavLink
                 to="/resume"
                 className={({ isActive }) =>
-                  `relative text-sm font-medium tracking-wide transition-colors
-                   ${
-                     isActive
-                       ? 'text-[var(--text-primary)]'
-                       : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                   }`
+                  `relative text-sm font-medium tracking-wide transition-colors ${
+                    isActive
+                      ? 'text-[var(--text-primary)]'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`
                 }
               >
                 {({ isActive }) => (
@@ -117,7 +126,7 @@ export const Navbar = () => {
               </NavLink>
             </div>
 
-            {/* RIGHT: Actions (ALWAYS far right) */}
+            {/* RIGHT: Actions */}
             <div className="flex items-center justify-end gap-2 lg:gap-3 justify-self-end">
               {/* Theme Toggle */}
               <button
@@ -126,6 +135,7 @@ export const Navbar = () => {
                            bg-[var(--bg-tertiary)]/70 backdrop-blur
                            hover:bg-[var(--bg-tertiary)] transition-colors"
                 aria-label="Toggle theme"
+                type="button"
               >
                 <span
                   className={`absolute top-1 left-1 w-6 h-6 rounded-full
@@ -146,16 +156,17 @@ export const Navbar = () => {
                 className="lg:hidden p-2.5 rounded-xl bg-[var(--bg-tertiary)] text-[var(--text-primary)]
                            hover:bg-[var(--border-default)] transition-colors"
                 aria-label="Toggle menu"
+                type="button"
               >
                 {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
             </div>
-
-            {/* On mobile we used 3 columns; on desktop we used 3 columns too, but center takes nav.
-               This grid config ensures actions stay pinned right at all sizes. */}
           </div>
         </div>
       </motion.nav>
+
+      {/* Spacer = FIX. Reserves the fixed header height so page content never hides behind navbar */}
+      <div className="h-16 lg:h-20" aria-hidden="true" />
 
       {/* Mobile Menu */}
       <AnimatePresence>
@@ -174,7 +185,9 @@ export const Navbar = () => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 bottom-0 w-80 bg-[var(--bg-card)] border-l border-[var(--border-default)] z-50 lg:hidden"
+              className="fixed top-0 right-0 bottom-0 w-80 max-w-[85vw] bg-[var(--bg-card)] border-l border-[var(--border-default)] z-50 lg:hidden"
+              role="dialog"
+              aria-modal="true"
             >
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between p-6 border-b border-[var(--border-default)]">
@@ -184,6 +197,7 @@ export const Navbar = () => {
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="p-2 rounded-xl hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] transition-colors"
+                    type="button"
                   >
                     <X size={20} />
                   </button>
@@ -238,7 +252,7 @@ export const Navbar = () => {
                   <Link
                     to="/resume"
                     className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl
-                               bg-gradient-to-r from-[var(--color-primary-500)] to-[var(--color-accent-500)]  text-white font-medium hover:shadow-lg transition-all"
+                               bg-gradient-to-r from-[var(--color-primary-500)] to-[var(--color-accent-500)] text-white font-medium hover:shadow-lg transition-all"
                   >
                     <Download size={18} />
                     Download Resume
