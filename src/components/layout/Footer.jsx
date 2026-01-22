@@ -126,7 +126,7 @@ export const Footer = () => {
   const phone = contact?.phone;
 
   return (
-    <footer className="relative overflow-hidden bg-[var(--bg-secondary)] border-t border-[var(--border-default)]">
+      <footer className="relative overflow-hidden bg-[#0A0F1A] border-t border-[var(--border-default)]">
       {/* Background layers */}
       <div className="absolute inset-0 bg-grid opacity-40" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/25" />

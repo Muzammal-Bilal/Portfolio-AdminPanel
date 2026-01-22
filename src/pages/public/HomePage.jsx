@@ -1,18 +1,74 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Download, Github, Linkedin, Mail, Sparkles, ChevronDown } from 'lucide-react';
+import { ArrowRight, Download, Github, Mail, Sparkles, ChevronDown } from 'lucide-react';
 import { usePortfolio } from '../../contexts/PortfolioContext';
 import { Loading } from '../../components/common';
+import { useEffect, useMemo, useState } from 'react';
 
 export const HomePage = () => {
   const { profile, projects, skills, loading } = usePortfolio();
+
+  // -------- Typewriter (UI-only) ----------
+  const fullName = profile?.name || 'Muzammal Bilal';
+
+  // If you ever want multiple rotating texts, add more items here.
+  const typeTargets = useMemo(() => [fullName], [fullName]);
+
+  const [displayText, setDisplayText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [loopIndex, setLoopIndex] = useState(0);
+
+  useEffect(() => {
+    const current = typeTargets[loopIndex % typeTargets.length];
+
+    // Speeds (tune as needed)
+    const typingSpeed = 90;     // typing speed
+    const deletingSpeed = 55;   // deleting speed
+    const pauseAfterTyped = 900; // pause when fully typed
+    const pauseAfterDeleted = 350; // pause when fully deleted
+
+    let timeout;
+
+    // When typing finished
+    if (!isDeleting && displayText === current) {
+      timeout = setTimeout(() => setIsDeleting(true), pauseAfterTyped);
+      return () => clearTimeout(timeout);
+    }
+
+    // When deleting finished
+    if (isDeleting && displayText === '') {
+      timeout = setTimeout(() => {
+        setIsDeleting(false);
+        setLoopIndex((prev) => (prev + 1) % typeTargets.length);
+      }, pauseAfterDeleted);
+      return () => clearTimeout(timeout);
+    }
+
+    // Continue typing or deleting
+    timeout = setTimeout(() => {
+      const next = isDeleting
+        ? current.substring(0, displayText.length - 1)
+        : current.substring(0, displayText.length + 1);
+
+      setDisplayText(next);
+    }, isDeleting ? deletingSpeed : typingSpeed);
+
+    return () => clearTimeout(timeout);
+  }, [displayText, isDeleting, loopIndex, typeTargets]);
+  // ---------------------------------------
 
   if (loading) {
     return <Loading fullScreen text="Loading portfolio..." />;
   }
 
-  const featuredProjects = projects?.filter(p => p.featured && p.published)?.slice(0, 3) || [];
-  const allSkills = skills?.filter(s => s.published)?.flatMap(cat => cat.skills.map(s => s.name))?.slice(0, 8) || [];
+  const featuredProjects =
+    projects?.filter((p) => p.featured && p.published)?.slice(0, 3) || [];
+
+  const allSkills =
+    skills
+      ?.filter((s) => s.published)
+      ?.flatMap((cat) => cat.skills.map((s) => s.name))
+      ?.slice(0, 8) || [];
 
   return (
     <div className="relative">
@@ -22,7 +78,7 @@ export const HomePage = () => {
         <div className="absolute inset-0 bg-grid" />
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[var(--color-primary-500)]/20 rounded-full blur-[100px]" />
         <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-[var(--color-accent-500)]/20 rounded-full blur-[100px]" />
-        
+
         <div className="container-custom relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Content */}
@@ -39,14 +95,24 @@ export const HomePage = () => {
                 </span>
               </motion.div>
 
+              {/* UPDATED: Typewriter Name */}
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-[var(--text-primary)] leading-tight mb-6"
               >
-                Hi, I'm{' '}
-                <span className="gradient-text">{profile?.name || 'Muzammal Bilal'}</span>
+                Hi, I&apos;m{' '}
+                <span className="gradient-text">
+                  {displayText}
+                  {/* Cursor */}
+                  <motion.span
+                    aria-hidden="true"
+                    className="inline-block align-baseline ml-1 w-[2px] h-[1em] bg-[var(--text-primary)]/70"
+                    animate={{ opacity: [1, 0, 1] }}
+                    transition={{ duration: 0.9, repeat: Infinity }}
+                  />
+                </span>
               </motion.h1>
 
               <motion.p
@@ -64,7 +130,8 @@ export const HomePage = () => {
                 transition={{ duration: 0.5, delay: 0.3 }}
                 className="text-[var(--text-muted)] text-lg max-w-xl mb-8 leading-relaxed"
               >
-                {profile?.subtitle || 'Building intelligent systems that transform businesses through AI, machine learning, and innovative solutions.'}
+                {profile?.subtitle ||
+                  'Building intelligent systems that transform businesses through AI, machine learning, and innovative solutions.'}
               </motion.p>
 
               {/* CTA Buttons */}
@@ -81,6 +148,7 @@ export const HomePage = () => {
                   View Projects
                   <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
+
                 <Link
                   to="/resume"
                   className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-default)] text-[var(--text-primary)] font-semibold hover:border-[var(--color-primary-500)] transition-all"
@@ -103,9 +171,7 @@ export const HomePage = () => {
                       <div className="text-3xl font-display font-bold gradient-text">
                         {stat.value}
                       </div>
-                      <div className="text-sm text-[var(--text-muted)]">
-                        {stat.label}
-                      </div>
+                      <div className="text-sm text-[var(--text-muted)]">{stat.label}</div>
                     </div>
                   ))}
                 </motion.div>
@@ -121,9 +187,15 @@ export const HomePage = () => {
             >
               <div className="relative">
                 {/* Decorative rings */}
-                <div className="absolute inset-0 -m-8 rounded-full border-2 border-dashed border-[var(--color-primary-500)]/20 animate-spin" style={{ animationDuration: '30s' }} />
-                <div className="absolute inset-0 -m-16 rounded-full border-2 border-dashed border-[var(--color-accent-500)]/20 animate-spin" style={{ animationDuration: '40s', animationDirection: 'reverse' }} />
-                
+                <div
+                  className="absolute inset-0 -m-8 rounded-full border-2 border-dashed border-[var(--color-primary-500)]/20 animate-spin"
+                  style={{ animationDuration: '30s' }}
+                />
+                <div
+                  className="absolute inset-0 -m-16 rounded-full border-2 border-dashed border-[var(--color-accent-500)]/20 animate-spin"
+                  style={{ animationDuration: '40s', animationDirection: 'reverse' }}
+                />
+
                 {/* Image container */}
                 <div className="relative w-72 h-72 sm:w-80 sm:h-80 lg:w-96 lg:h-96 rounded-full overflow-hidden border-4 border-[var(--bg-card)] shadow-2xl">
                   {profile?.profileImage ? (
@@ -147,15 +219,19 @@ export const HomePage = () => {
                   transition={{ duration: 3, repeat: Infinity }}
                   className="absolute -top-4 right-0 px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-default)] shadow-lg"
                 >
-                  <span className="text-sm font-medium text-[var(--text-primary)]">🎓 Master's in AI</span>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">
+                    🎓 Master's in AI
+                  </span>
                 </motion.div>
-                
+
                 <motion.div
                   animate={{ y: [0, 10, 0] }}
                   transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
                   className="absolute -bottom-4 left-0 px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-default)] shadow-lg"
                 >
-                  <span className="text-sm font-medium text-[var(--text-primary)]">🏆 Employee of the Month</span>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">
+                    🏆 Employee of the Month
+                  </span>
                 </motion.div>
               </div>
             </motion.div>
@@ -211,11 +287,10 @@ export const HomePage = () => {
                   transition={{ delay: index * 0.1 }}
                   className="group relative bg-[var(--bg-card)] rounded-2xl border border-[var(--border-default)] overflow-hidden hover:border-[var(--color-primary-500)]/30 hover:shadow-xl transition-all duration-300"
                 >
-                  {/* Project image or gradient */}
                   <div className="h-48 bg-gradient-to-br from-[var(--color-primary-500)]/20 to-[var(--color-accent-500)]/20 flex items-center justify-center">
                     <span className="text-6xl">🤖</span>
                   </div>
-                  
+
                   <div className="p-6">
                     <h3 className="text-xl font-display font-bold text-[var(--text-primary)] mb-2 group-hover:text-[var(--color-primary-500)] transition-colors">
                       {project.title}
@@ -223,8 +298,7 @@ export const HomePage = () => {
                     <p className="text-[var(--text-muted)] text-sm mb-4 line-clamp-2">
                       {project.description}
                     </p>
-                    
-                    {/* Tech stack */}
+
                     <div className="flex flex-wrap gap-2 mb-4">
                       {project.stack?.slice(0, 3).map((tech, i) => (
                         <span
@@ -241,7 +315,6 @@ export const HomePage = () => {
                       )}
                     </div>
 
-                    {/* Metrics */}
                     {project.metrics && project.metrics.length > 0 && (
                       <div className="flex gap-4 pt-4 border-t border-[var(--border-default)]">
                         {project.metrics.slice(0, 2).map((metric, i) => (
@@ -342,10 +415,10 @@ export const HomePage = () => {
             className="text-center max-w-3xl mx-auto"
           >
             <h2 className="text-3xl sm:text-4xl font-display font-bold text-[var(--text-primary)] mb-6">
-              Let's Build Something Amazing Together
+              Let&apos;s Build Something Amazing Together
             </h2>
             <p className="text-[var(--text-muted)] text-lg mb-8">
-              I'm always open to discussing new projects, creative ideas, or opportunities to be part of your vision.
+              I&apos;m always open to discussing new projects, creative ideas, or opportunities to be part of your vision.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link
@@ -355,6 +428,7 @@ export const HomePage = () => {
                 <Mail size={18} />
                 Get in Touch
               </Link>
+
               <a
                 href="https://github.com/Muzammal-Bilal"
                 target="_blank"
