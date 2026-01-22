@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle, GraduationCap, MapPin } from 'lucide-react';
 import { usePortfolio } from '../../contexts/PortfolioContext';
 import { Loading } from '../../components/common';
+import bahriaLogo from '../../assets/education/bahria.png';
 
 export const AboutPage = () => {
   const { about, profile, education, loading } = usePortfolio();
@@ -10,23 +11,10 @@ export const AboutPage = () => {
     return <Loading fullScreen />;
   }
 
-  // UI-only helper (does not change data flow)
-  const getEduDateRange = (edu) => {
-    const start =
-      edu?.startDate ||
-      edu?.start ||
-      edu?.from ||
-      edu?.startMonthYear ||
-      edu?.start_year ||
-      edu?.start_year_month;
-
-    const end =
-      edu?.endDate ||
-      edu?.end ||
-      edu?.to ||
-      edu?.endMonthYear ||
-      edu?.end_year ||
-      edu?.end_year_month;
+  // UI-only helper: uses dates if you add them later; otherwise shows status
+  const getEduMetaLine = (edu) => {
+    const start = edu?.startDate || edu?.start || edu?.from;
+    const end = edu?.endDate || edu?.end || edu?.to;
 
     if (start && end) return `${start} – ${end}`;
     if (start && !end) return `${start} – Present`;
@@ -34,11 +22,9 @@ export const AboutPage = () => {
   };
 
   const getEduBullets = (edu) => {
-    // Supports multiple possible shapes without requiring schema changes
-    if (Array.isArray(edu?.highlights) && edu.highlights.length > 0) return edu.highlights;
-    if (Array.isArray(edu?.bullets) && edu.bullets.length > 0) return edu.bullets;
+    if (Array.isArray(edu?.bullets) && edu.bullets.length) return edu.bullets;
+    if (Array.isArray(edu?.highlights) && edu.highlights.length) return edu.highlights;
     if (edu?.description) return [edu.description];
-    if (edu?.summary) return [edu.summary];
     return [];
   };
 
@@ -47,63 +33,86 @@ export const AboutPage = () => {
       <div className="container-custom">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-3xl mb-12 sm:mb-16"
+          className="max-w-4xl mb-10 sm:mb-14"
         >
-          <span className="inline-block px-4 py-1.5 rounded-full bg-[var(--color-primary-500)]/10 text-[var(--color-primary-500)] text-sm font-medium mb-4">
+          <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-[var(--color-primary-500)]/10 text-[var(--color-primary-500)] text-sm font-medium mb-4">
             About Me
           </span>
-          <h1 className="text-4xl sm:text-5xl font-display font-bold text-[var(--text-primary)] mb-6 leading-tight">
+
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-[var(--text-primary)] leading-tight tracking-tight">
             {about?.headline || 'Transforming Ideas into Intelligent Solutions'}
           </h1>
         </motion.div>
 
-        <div className="grid lg:grid-cols-3 gap-10 lg:gap-12">
-          {/* Main Content */}
+        {/* 12-col grid = less cramped than lg:grid-cols-3 */}
+        <div className="grid lg:grid-cols-12 gap-10 lg:gap-12">
+          {/* Main */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="lg:col-span-2"
+            transition={{ delay: 0.08 }}
+            className="lg:col-span-8"
           >
-            {/* Bio */}
-            <div
-              className="prose prose-lg max-w-none text-[var(--text-secondary)] mb-10 sm:mb-12"
-              dangerouslySetInnerHTML={{ __html: about?.longBio || '' }}
-            />
+            {/* Long Bio (readability pass) */}
+            <section className="mb-12 sm:mb-14">
+              <div
+                className="
+                  prose prose-lg max-w-none
+                  text-[var(--text-secondary)]
+                  leading-relaxed
+                  prose-p:my-4
+                  prose-headings:mt-8
+                  prose-strong:text-[var(--text-primary)]
+                "
+                style={{ maxWidth: '72ch' }}
+                dangerouslySetInnerHTML={{ __html: about?.longBio || '' }}
+              />
+            </section>
 
-            {/* Highlights */}
-            {about?.highlights && about.highlights.length > 0 && (
-              <div className="mb-12">
-                <h2 className="text-2xl font-display font-bold text-[var(--text-primary)] mb-6">
+            {/* Highlights (less visually heavy, better spacing) */}
+            {about?.highlights?.length > 0 && (
+              <section className="mb-14">
+                <h2 className="text-2xl sm:text-3xl font-display font-bold text-[var(--text-primary)] mb-6">
                   What I Bring to the Table
                 </h2>
 
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="grid gap-4 md:grid-cols-2">
                   {about.highlights.map((highlight, index) => (
                     <motion.div
                       key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2 + index * 0.1 }}
-                      className="flex items-start gap-3 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-default)]"
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.12 + index * 0.06 }}
+                      className="
+                        flex items-start gap-3
+                        p-4 sm:p-5
+                        rounded-2xl
+                        bg-[var(--bg-card)]
+                        border border-[var(--border-default)]
+                      "
                     >
                       <CheckCircle className="w-5 h-5 text-[var(--color-success-500)] flex-shrink-0 mt-0.5" />
-                      <span className="text-[var(--text-primary)]">{highlight}</span>
+                      <span className="text-[var(--text-primary)] leading-snug">
+                        {highlight}
+                      </span>
                     </motion.div>
                   ))}
                 </div>
-              </div>
+              </section>
             )}
 
-            {/* Education (Updated to match screenshot layout + responsive) */}
-            {education && education.length > 0 && (
-              <section className="mt-6 sm:mt-8">
+            {/* Education (Screenshot-style + added top/bottom spacing) */}
+            {education?.length > 0 && (
+              <section className="mt-14 sm:mt-16 mb-12 sm:mb-16">
+                {/* Optional divider to clearly separate from above content */}
+                <div className="h-px w-full bg-[var(--border-default)]/60 mb-10 sm:mb-12" />
+
                 <motion.h2
                   initial={{ opacity: 0, y: 14 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-5xl sm:text-6xl font-display font-medium text-[var(--text-primary)] tracking-tight mb-8 sm:mb-10"
+                  className="text-5xl sm:text-6xl font-display font-medium text-[var(--text-primary)] tracking-tight mb-8"
                 >
                   Education
                 </motion.h2>
@@ -111,37 +120,32 @@ export const AboutPage = () => {
                 <div className="divide-y divide-[var(--border-default)]">
                   {education
                     .filter((e) => e.published)
+                    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
                     .map((edu, index) => {
-                      const dateRange = getEduDateRange(edu);
+                      const metaLine = getEduMetaLine(edu);
                       const bullets = getEduBullets(edu);
 
                       return (
                         <motion.article
                           key={edu.id}
-                          initial={{ opacity: 0, y: 18 }}
+                          initial={{ opacity: 0, y: 16 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.15 + index * 0.08 }}
+                          transition={{ delay: 0.12 + index * 0.06 }}
                           className="py-8 sm:py-10"
                         >
                           <div className="flex flex-col sm:flex-row gap-5 sm:gap-8">
-                            {/* Left Logo / Avatar */}
+                            {/* Left logo circle */}
                             <div className="flex-shrink-0">
-                              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border border-[var(--border-default)] bg-[var(--bg-card)] flex items-center justify-center">
-                                {/* If you store a logo URL in your education doc (e.g., edu.logo / edu.image),
-                                    it will render automatically. Otherwise fallback icon. */}
-                                {edu?.logo || edu?.logoUrl || edu?.image ? (
-                                  <img
-                                    src={edu.logo || edu.logoUrl || edu.image}
-                                    alt={edu.institution || 'Education'}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <GraduationCap className="w-7 h-7 sm:w-8 sm:h-8 text-[var(--text-primary)]/70" />
-                                )}
+                              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border border-[var(--border-default)] bg-white flex items-center justify-center">
+                                <img
+                                  src={edu.logo || edu.logoUrl || edu.image || bahriaLogo}
+                                  alt={edu.institution || 'Education'}
+                                  className="w-full h-full object-contain p-2 block"
+                                />
                               </div>
                             </div>
 
-                            {/* Right Content */}
+                            {/* Right content */}
                             <div className="min-w-0">
                               <h3 className="text-2xl sm:text-3xl font-display font-semibold text-[var(--text-primary)] leading-tight">
                                 {edu.institution}
@@ -151,13 +155,12 @@ export const AboutPage = () => {
                                 {edu.degree}
                               </p>
 
-                              {dateRange ? (
+                              {metaLine && (
                                 <p className="mt-1 text-base sm:text-lg text-[var(--text-secondary)]">
-                                  {dateRange}
+                                  {metaLine}
                                 </p>
-                              ) : null}
+                              )}
 
-                              {/* Optional bullet line(s) like screenshot */}
                               {bullets.length > 0 && (
                                 <ul className="mt-4 space-y-2 text-[var(--text-secondary)]">
                                   {bullets.map((b, i) => (
@@ -167,21 +170,6 @@ export const AboutPage = () => {
                                     </li>
                                   ))}
                                 </ul>
-                              )}
-
-                              {/* Keep your status pill if you want; styled to be subtle and non-invasive */}
-                              {edu.status && (
-                                <div className="mt-4">
-                                  <span
-                                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
-                                      edu.status === 'In Progress'
-                                        ? 'bg-[var(--color-warning-500)]/10 text-[var(--color-warning-500)] border-[var(--color-warning-500)]/20'
-                                        : 'bg-[var(--color-success-500)]/10 text-[var(--color-success-500)] border-[var(--color-success-500)]/20'
-                                    }`}
-                                  >
-                                    {edu.status}
-                                  </span>
-                                </div>
                               )}
                             </div>
                           </div>
@@ -193,16 +181,16 @@ export const AboutPage = () => {
             )}
           </motion.div>
 
-          {/* Sidebar */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
+          {/* Sidebar (sticky + spacing tuned) */}
+          <motion.aside
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="space-y-8"
+            transition={{ delay: 0.14 }}
+            className="lg:col-span-4 lg:sticky lg:top-28 self-start space-y-6"
           >
             {/* Profile Card */}
-            <div className="p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-default)]">
-              <div className="w-24 h-24 mx-auto rounded-full overflow-hidden border-4 border-[var(--bg-tertiary)] mb-6">
+            <div className="p-6 sm:p-7 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-default)]">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full overflow-hidden border-4 border-[var(--bg-tertiary)] mb-5">
                 {profile?.profileImage ? (
                   <img
                     src={profile.profileImage}
@@ -217,29 +205,36 @@ export const AboutPage = () => {
                   </div>
                 )}
               </div>
-              <h3 className="text-xl font-display font-bold text-[var(--text-primary)] text-center mb-1">
+
+              <h3 className="text-xl font-display font-bold text-[var(--text-primary)] text-center">
                 {profile?.name || 'Muzammal Bilal'}
               </h3>
-              <p className="text-[var(--text-muted)] text-center mb-4">
+              <p className="text-[var(--text-muted)] text-center mt-1">
                 {profile?.title || 'AI/ML Engineer'}
               </p>
-              <div className="flex items-center justify-center gap-2 text-[var(--text-secondary)]">
+
+              <div className="flex items-center justify-center gap-2 text-[var(--text-secondary)] mt-3">
                 <MapPin size={16} />
-                <span>Pakistan</span>
+                <span>{profile?.location || 'Pakistan'}</span>
               </div>
             </div>
 
             {/* Quick Stats */}
             {profile?.stats && (
-              <div className="p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-default)]">
+              <div className="p-6 sm:p-7 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-default)]">
                 <h3 className="text-lg font-display font-bold text-[var(--text-primary)] mb-4">
                   Quick Stats
                 </h3>
-                <div className="space-y-4">
+
+                <div className="divide-y divide-[var(--border-default)]/70">
                   {profile.stats.map((stat, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-[var(--text-muted)]">{stat.label}</span>
-                      <span className="font-bold gradient-text">{stat.value}</span>
+                    <div key={index} className="flex items-center justify-between py-3">
+                      <span className="text-[var(--text-muted)] text-sm">
+                        {stat.label}
+                      </span>
+                      <span className="font-bold gradient-text">
+                        {stat.value}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -247,26 +242,30 @@ export const AboutPage = () => {
             )}
 
             {/* Fun Facts */}
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-[var(--color-primary-500)]/10 to-[var(--color-accent-500)]/10 border border-[var(--color-primary-500)]/20">
+            <div className="p-6 sm:p-7 rounded-2xl bg-gradient-to-br from-[var(--color-primary-500)]/10 to-[var(--color-accent-500)]/10 border border-[var(--color-primary-500)]/20">
               <h3 className="text-lg font-display font-bold text-[var(--text-primary)] mb-4">
                 Fun Facts
               </h3>
-              <ul className="space-y-3 text-[var(--text-secondary)]">
-                <li className="flex items-center gap-2">
-                  <span>🎓</span> Pursuing Master's in AI
+              <ul className="space-y-2.5 text-[var(--text-secondary)]">
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5">🎓</span>
+                  <span>Pursuing Master's in AI</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span>🏆</span> Employee of the Month
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5">🏆</span>
+                  <span>Employee of the Month</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span>👥</span> Impacted 500+ students
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5">👥</span>
+                  <span>Impacted 500+ students</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span>📊</span> 45% efficiency improvement
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5">📊</span>
+                  <span>45% efficiency improvement</span>
                 </li>
               </ul>
             </div>
-          </motion.div>
+          </motion.aside>
         </div>
       </div>
     </div>
