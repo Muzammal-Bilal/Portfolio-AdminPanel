@@ -27,7 +27,7 @@ A modern, dynamic portfolio web application built with React, Vite, TailwindCSS,
 
 ### 1. Clone & Install
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Muzammal-Bilal Portfolio-AdminPanel
 cd muzammal-portfolio
 npm install
 ```
