@@ -1,175 +1,168 @@
-import { 
-  collection, 
-  doc, 
-  getDoc, 
-  getDocs, 
-  setDoc, 
-  updateDoc, 
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
   deleteDoc,
   query,
   orderBy,
-  writeBatch
-} from 'firebase/firestore';
-import { 
-  ref, 
-  uploadBytes, 
-  getDownloadURL, 
-  deleteObject 
-} from 'firebase/storage';
-import { db, storage } from '../config/firebase';
-import seedData from '../data/seedData';
+  writeBatch,
+} from "firebase/firestore";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
+import { db, storage } from "../config/firebase";
+import seedData from "../data/seedData";
 
 // Collection names
 const COLLECTIONS = {
-  SETTINGS: 'settings',
-  PROFILE: 'profile',
-  ABOUT: 'about',
-  EXPERIENCE: 'experience',
-  PROJECTS: 'projects',
-  SKILLS: 'skills',
-  CERTIFICATIONS: 'certifications',
-  CONTACT: 'contact',
-  EDUCATION: 'education'
+  SETTINGS: "settings",
+  PROFILE: "profile",
+  ABOUT: "about",
+  EXPERIENCE: "experience",
+  PROJECTS: "projects",
+  SKILLS: "skills",
+  CERTIFICATIONS: "certifications",
+  CONTACT: "contact",
+  EDUCATION: "education",
 };
 
+// -------------------------
 // Generic CRUD operations
-export const getData = async (collectionName, docId = 'main') => {
-  try {
-    const docRef = doc(db, collectionName, docId);
-    const docSnap = await getDoc(docRef);
-    
-    if (docSnap.exists()) {
-      return { id: docSnap.id, ...docSnap.data() };
-    }
-    return null;
-  } catch (error) {
-    console.error(`Error getting ${collectionName}:`, error);
-    throw error;
-  }
+// -------------------------
+export const getData = async (collectionName, docId = "main") => {
+  const docRef = doc(db, collectionName, docId);
+  const docSnap = await getDoc(docRef);
+
+  if (!docSnap.exists()) return null;
+
+  // Standardize response: id + payload
+  return { id: docSnap.id, ...docSnap.data() };
 };
 
-export const setData = async (collectionName, data, docId = 'main') => {
-  try {
-    const docRef = doc(db, collectionName, docId);
-    await setDoc(docRef, { ...data, updatedAt: new Date().toISOString() }, { merge: true });
-    return { id: docId, ...data };
-  } catch (error) {
-    console.error(`Error setting ${collectionName}:`, error);
-    throw error;
-  }
+export const setData = async (collectionName, data, docId = "main") => {
+  // Use merge so we don't accidentally blow away fields not present in payload
+  const docRef = doc(db, collectionName, docId);
+  await setDoc(
+    docRef,
+    { ...data, updatedAt: new Date().toISOString() },
+    { merge: true }
+  );
+  return { id: docId, ...data };
 };
 
-export const updateData = async (collectionName, data, docId = 'main') => {
-  try {
-    const docRef = doc(db, collectionName, docId);
-    await updateDoc(docRef, { ...data, updatedAt: new Date().toISOString() });
-    return { id: docId, ...data };
-  } catch (error) {
-    console.error(`Error updating ${collectionName}:`, error);
-    throw error;
-  }
+export const updateData = async (collectionName, data, docId = "main") => {
+  const docRef = doc(db, collectionName, docId);
+  await updateDoc(docRef, { ...data, updatedAt: new Date().toISOString() });
+  return { id: docId, ...data };
 };
 
-// Collection operations (for arrays like experience, projects, etc.)
+// -------------------------
+// Collection operations
+// -------------------------
 export const getCollection = async (collectionName) => {
   try {
     const colRef = collection(db, collectionName);
-    const q = query(colRef, orderBy('order', 'asc'));
+    const q = query(colRef, orderBy("order", "asc"));
     const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
+
+    return querySnapshot.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
     }));
   } catch (error) {
     console.error(`Error getting collection ${collectionName}:`, error);
-    // Return empty array on error (collection might not exist yet)
     return [];
   }
 };
 
 export const addToCollection = async (collectionName, data) => {
-  try {
-    const docId = data.id || `${collectionName}_${Date.now()}`;
-    const docRef = doc(db, collectionName, docId);
-    await setDoc(docRef, { 
-      ...data, 
-      id: docId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString() 
-    });
-    return { id: docId, ...data };
-  } catch (error) {
-    console.error(`Error adding to ${collectionName}:`, error);
-    throw error;
-  }
+  const docId = data.id || `${collectionName}_${Date.now()}`;
+  const docRef = doc(db, collectionName, docId);
+
+  await setDoc(docRef, {
+    ...data,
+    id: docId,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
+
+  return { id: docId, ...data };
 };
 
 export const updateInCollection = async (collectionName, docId, data) => {
-  try {
-    const docRef = doc(db, collectionName, docId);
-    await updateDoc(docRef, { ...data, updatedAt: new Date().toISOString() });
-    return { id: docId, ...data };
-  } catch (error) {
-    console.error(`Error updating in ${collectionName}:`, error);
-    throw error;
-  }
+  const docRef = doc(db, collectionName, docId);
+  await updateDoc(docRef, { ...data, updatedAt: new Date().toISOString() });
+  return { id: docId, ...data };
 };
 
 export const deleteFromCollection = async (collectionName, docId) => {
-  try {
-    const docRef = doc(db, collectionName, docId);
-    await deleteDoc(docRef);
-    return true;
-  } catch (error) {
-    console.error(`Error deleting from ${collectionName}:`, error);
-    throw error;
-  }
+  const docRef = doc(db, collectionName, docId);
+  await deleteDoc(docRef);
+  return true;
 };
 
 // Batch update for reordering
 export const batchUpdateOrder = async (collectionName, items) => {
-  try {
-    const batch = writeBatch(db);
-    
-    items.forEach((item, index) => {
-      const docRef = doc(db, collectionName, item.id);
-      batch.update(docRef, { order: index });
-    });
-    
-    await batch.commit();
-    return true;
-  } catch (error) {
-    console.error(`Error batch updating ${collectionName}:`, error);
-    throw error;
-  }
+  const batch = writeBatch(db);
+
+  items.forEach((item, index) => {
+    const docRef = doc(db, collectionName, item.id);
+    batch.update(docRef, { order: index, updatedAt: new Date().toISOString() });
+  });
+
+  await batch.commit();
+  return true;
 };
 
-// File upload
+// -------------------------
+// File upload (hardened)
+// -------------------------
+
+// Optional: allow you to store both URL and storagePath in Firestore if you want.
+// Your UI uses only URL, but for deletion/management, path is valuable.
 export const uploadFile = async (file, path) => {
+  if (!file) throw new Error("No file provided.");
+  if (!path) throw new Error("No storage path provided.");
+
   try {
     const storageRef = ref(storage, path);
-    const snapshot = await uploadBytes(storageRef, file);
+
+    // Attach content type; some browsers provide empty type for PDFs sometimes
+    const metadata = {
+      contentType: file.type || "application/octet-stream",
+    };
+
+    // Upload and get download URL
+    const snapshot = await uploadBytes(storageRef, file, metadata);
     const downloadURL = await getDownloadURL(snapshot.ref);
-    return downloadURL;
+
+    // Return both (URL for UI, path for admin ops)
+    return { url: downloadURL, path };
   } catch (error) {
-    console.error('Error uploading file:', error);
+    // This error will expose whether rules/auth are blocking you
+    console.error("Error uploading file:", error);
     throw error;
   }
 };
 
+// Deletion expects a storage path, NOT the download URL
 export const deleteFile = async (path) => {
-  try {
-    const storageRef = ref(storage, path);
-    await deleteObject(storageRef);
-    return true;
-  } catch (error) {
-    console.error('Error deleting file:', error);
-    throw error;
-  }
+  if (!path) throw new Error("No storage path provided for delete.");
+
+  const storageRef = ref(storage, path);
+  await deleteObject(storageRef);
+  return true;
 };
 
-// Specific data fetchers for public site
+// -------------------------
+// Specific data fetchers
+// -------------------------
 export const getSettings = () => getData(COLLECTIONS.SETTINGS);
 export const getProfile = () => getData(COLLECTIONS.PROFILE);
 export const getAbout = () => getData(COLLECTIONS.ABOUT);
@@ -182,83 +175,67 @@ export const getEducation = () => getCollection(COLLECTIONS.EDUCATION);
 
 // Fetch all portfolio data at once
 export const getAllPortfolioData = async () => {
-  try {
-    const [settings, profile, about, experience, projects, skills, certifications, contact, education] = await Promise.all([
-      getSettings(),
-      getProfile(),
-      getAbout(),
-      getExperience(),
-      getProjects(),
-      getSkills(),
-      getCertifications(),
-      getContact(),
-      getEducation()
-    ]);
-    
-    return {
-      settings,
-      profile,
-      about,
-      experience,
-      projects,
-      skills,
-      certifications,
-      contact,
-      education
-    };
-  } catch (error) {
-    console.error('Error fetching all portfolio data:', error);
-    throw error;
-  }
+  const [
+    settings,
+    profile,
+    about,
+    experience,
+    projects,
+    skills,
+    certifications,
+    contact,
+    education,
+  ] = await Promise.all([
+    getSettings(),
+    getProfile(),
+    getAbout(),
+    getExperience(),
+    getProjects(),
+    getSkills(),
+    getCertifications(),
+    getContact(),
+    getEducation(),
+  ]);
+
+  return {
+    settings,
+    profile,
+    about,
+    experience,
+    projects,
+    skills,
+    certifications,
+    contact,
+    education,
+  };
 };
 
 // Initialize database with seed data
 export const initializeDatabase = async () => {
-  try {
-    const batch = writeBatch(db);
-    
-    // Set single documents
-    const settingsRef = doc(db, COLLECTIONS.SETTINGS, 'main');
-    batch.set(settingsRef, { ...seedData.settings, updatedAt: new Date().toISOString() });
-    
-    const profileRef = doc(db, COLLECTIONS.PROFILE, 'main');
-    batch.set(profileRef, { ...seedData.profile, updatedAt: new Date().toISOString() });
-    
-    const aboutRef = doc(db, COLLECTIONS.ABOUT, 'main');
-    batch.set(aboutRef, { ...seedData.about, updatedAt: new Date().toISOString() });
-    
-    const contactRef = doc(db, COLLECTIONS.CONTACT, 'main');
-    batch.set(contactRef, { ...seedData.contact, updatedAt: new Date().toISOString() });
-    
-    await batch.commit();
-    
-    // Add collection items
-    for (const exp of seedData.experience) {
-      await addToCollection(COLLECTIONS.EXPERIENCE, exp);
-    }
-    
-    for (const proj of seedData.projects) {
-      await addToCollection(COLLECTIONS.PROJECTS, proj);
-    }
-    
-    for (const skill of seedData.skills) {
-      await addToCollection(COLLECTIONS.SKILLS, skill);
-    }
-    
-    for (const cert of seedData.certifications) {
-      await addToCollection(COLLECTIONS.CERTIFICATIONS, cert);
-    }
-    
-    for (const edu of seedData.education) {
-      await addToCollection(COLLECTIONS.EDUCATION, edu);
-    }
-    
-    console.log('Database initialized with seed data');
-    return true;
-  } catch (error) {
-    console.error('Error initializing database:', error);
-    throw error;
-  }
+  const batch = writeBatch(db);
+
+  const settingsRef = doc(db, COLLECTIONS.SETTINGS, "main");
+  batch.set(settingsRef, { ...seedData.settings, updatedAt: new Date().toISOString() });
+
+  const profileRef = doc(db, COLLECTIONS.PROFILE, "main");
+  batch.set(profileRef, { ...seedData.profile, updatedAt: new Date().toISOString() });
+
+  const aboutRef = doc(db, COLLECTIONS.ABOUT, "main");
+  batch.set(aboutRef, { ...seedData.about, updatedAt: new Date().toISOString() });
+
+  const contactRef = doc(db, COLLECTIONS.CONTACT, "main");
+  batch.set(contactRef, { ...seedData.contact, updatedAt: new Date().toISOString() });
+
+  await batch.commit();
+
+  for (const exp of seedData.experience) await addToCollection(COLLECTIONS.EXPERIENCE, exp);
+  for (const proj of seedData.projects) await addToCollection(COLLECTIONS.PROJECTS, proj);
+  for (const skill of seedData.skills) await addToCollection(COLLECTIONS.SKILLS, skill);
+  for (const cert of seedData.certifications) await addToCollection(COLLECTIONS.CERTIFICATIONS, cert);
+  for (const edu of seedData.education) await addToCollection(COLLECTIONS.EDUCATION, edu);
+
+  console.log("Database initialized with seed data");
+  return true;
 };
 
 // Check if database is initialized
@@ -266,7 +243,7 @@ export const isDatabaseInitialized = async () => {
   try {
     const profile = await getProfile();
     return profile !== null;
-  } catch (error) {
+  } catch {
     return false;
   }
 };

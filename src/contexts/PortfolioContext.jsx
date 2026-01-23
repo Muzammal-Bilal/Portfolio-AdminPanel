@@ -1,15 +1,30 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import * as firebaseService from '../services/firebase.service';
-import seedData from '../data/seedData';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
+import * as firebaseService from "../services/firebase.service";
+import seedData from "../data/seedData";
 
 const PortfolioContext = createContext();
 
 export const usePortfolio = () => {
   const context = useContext(PortfolioContext);
-  if (!context) {
-    throw new Error('usePortfolio must be used within a PortfolioProvider');
-  }
+  if (!context) throw new Error("usePortfolio must be used within a PortfolioProvider");
   return context;
+};
+
+const makeId = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const getExt = (name) => {
+  const parts = String(name || "").split(".");
+  const ext = parts.length > 1 ? parts.pop() : "";
+  return (ext || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
+};
+
+const buildSafePath = (baseFolder, file) => {
+  // Unique + safe key; do NOT use raw file.name (spaces/collisions)
+  const ext = getExt(file?.name);
+  return `${baseFolder}/${makeId()}.${ext}`;
 };
 
 export const PortfolioProvider = ({ children }) => {
@@ -22,8 +37,9 @@ export const PortfolioProvider = ({ children }) => {
     skills: [],
     certifications: [],
     contact: null,
-    education: []
+    education: [],
   });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -33,12 +49,10 @@ export const PortfolioProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Check if database is initialized
+
       const initialized = await firebaseService.isDatabaseInitialized();
-      
+
       if (!initialized) {
-        // Use seed data as fallback
         setData({
           settings: seedData.settings,
           profile: seedData.profile,
@@ -48,7 +62,7 @@ export const PortfolioProvider = ({ children }) => {
           skills: seedData.skills,
           certifications: seedData.certifications,
           contact: seedData.contact,
-          education: seedData.education
+          education: seedData.education,
         });
         setIsInitialized(false);
       } else {
@@ -62,13 +76,14 @@ export const PortfolioProvider = ({ children }) => {
           skills: portfolioData.skills?.length ? portfolioData.skills : seedData.skills,
           certifications: portfolioData.certifications?.length ? portfolioData.certifications : seedData.certifications,
           contact: portfolioData.contact || seedData.contact,
-          education: portfolioData.education?.length ? portfolioData.education : seedData.education
+          education: portfolioData.education?.length ? portfolioData.education : seedData.education,
         });
         setIsInitialized(true);
       }
     } catch (err) {
-      console.error('Error loading portfolio data:', err);
-      setError(err.message);
+      console.error("Error loading portfolio data:", err);
+      setError(err?.message || String(err));
+
       // Fall back to seed data on error
       setData({
         settings: seedData.settings,
@@ -79,7 +94,7 @@ export const PortfolioProvider = ({ children }) => {
         skills: seedData.skills,
         certifications: seedData.certifications,
         contact: seedData.contact,
-        education: seedData.education
+        education: seedData.education,
       });
     } finally {
       setLoading(false);
@@ -91,341 +106,394 @@ export const PortfolioProvider = ({ children }) => {
   }, [loadData]);
 
   // Initialize database with seed data
-  const initializeDatabase = async () => {
+  const initializeDatabase = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       await firebaseService.initializeDatabase();
       await loadData();
       setIsInitialized(true);
       return true;
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadData]);
 
   // Update functions for admin
-  const updateSettings = async (newSettings) => {
+  const updateSettings = useCallback(async (newSettings) => {
     try {
-      await firebaseService.setData('settings', newSettings);
-      setData(prev => ({ ...prev, settings: { ...prev.settings, ...newSettings } }));
+      await firebaseService.setData("settings", newSettings);
+      setData((prev) => ({ ...prev, settings: { ...prev.settings, ...newSettings } }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
-  const updateProfile = async (newProfile) => {
+  const updateProfile = useCallback(async (newProfile) => {
     try {
-      await firebaseService.setData('profile', newProfile);
-      setData(prev => ({ ...prev, profile: { ...prev.profile, ...newProfile } }));
+      // Important: write the entire newProfile, not just partial fields
+      await firebaseService.setData("profile", newProfile);
+      setData((prev) => ({ ...prev, profile: { ...prev.profile, ...newProfile } }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
-  const updateAbout = async (newAbout) => {
+  const updateAbout = useCallback(async (newAbout) => {
     try {
-      await firebaseService.setData('about', newAbout);
-      setData(prev => ({ ...prev, about: { ...prev.about, ...newAbout } }));
+      await firebaseService.setData("about", newAbout);
+      setData((prev) => ({ ...prev, about: { ...prev.about, ...newAbout } }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
-  const updateContact = async (newContact) => {
+  const updateContact = useCallback(async (newContact) => {
     try {
-      await firebaseService.setData('contact', newContact);
-      setData(prev => ({ ...prev, contact: { ...prev.contact, ...newContact } }));
+      await firebaseService.setData("contact", newContact);
+      setData((prev) => ({ ...prev, contact: { ...prev.contact, ...newContact } }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
   // Experience CRUD
-  const addExperience = async (experience) => {
+  const addExperience = useCallback(async (experience) => {
     try {
-      const newExp = await firebaseService.addToCollection('experience', {
+      const newExp = await firebaseService.addToCollection("experience", {
         ...experience,
-        order: data.experience.length
+        order: data.experience.length,
       });
-      setData(prev => ({ ...prev, experience: [...prev.experience, newExp] }));
+      setData((prev) => ({ ...prev, experience: [...prev.experience, newExp] }));
       return newExp;
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, [data.experience.length]);
 
-  const updateExperience = async (id, experience) => {
+  const updateExperience = useCallback(async (id, experience) => {
     try {
-      await firebaseService.updateInCollection('experience', id, experience);
-      setData(prev => ({
+      await firebaseService.updateInCollection("experience", id, experience);
+      setData((prev) => ({
         ...prev,
-        experience: prev.experience.map(exp => 
-          exp.id === id ? { ...exp, ...experience } : exp
-        )
+        experience: prev.experience.map((exp) => (exp.id === id ? { ...exp, ...experience } : exp)),
       }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
-  const deleteExperience = async (id) => {
+  const deleteExperience = useCallback(async (id) => {
     try {
-      await firebaseService.deleteFromCollection('experience', id);
-      setData(prev => ({
+      await firebaseService.deleteFromCollection("experience", id);
+      setData((prev) => ({
         ...prev,
-        experience: prev.experience.filter(exp => exp.id !== id)
+        experience: prev.experience.filter((exp) => exp.id !== id),
       }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
-  const reorderExperience = async (newOrder) => {
+  const reorderExperience = useCallback(async (newOrder) => {
     try {
-      await firebaseService.batchUpdateOrder('experience', newOrder);
-      setData(prev => ({ ...prev, experience: newOrder }));
+      await firebaseService.batchUpdateOrder("experience", newOrder);
+      setData((prev) => ({ ...prev, experience: newOrder }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
   // Projects CRUD
-  const addProject = async (project) => {
+  const addProject = useCallback(async (project) => {
     try {
-      const newProj = await firebaseService.addToCollection('projects', {
+      const newProj = await firebaseService.addToCollection("projects", {
         ...project,
-        order: data.projects.length
+        order: data.projects.length,
       });
-      setData(prev => ({ ...prev, projects: [...prev.projects, newProj] }));
+      setData((prev) => ({ ...prev, projects: [...prev.projects, newProj] }));
       return newProj;
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, [data.projects.length]);
 
-  const updateProject = async (id, project) => {
+  const updateProject = useCallback(async (id, project) => {
     try {
-      await firebaseService.updateInCollection('projects', id, project);
-      setData(prev => ({
+      await firebaseService.updateInCollection("projects", id, project);
+      setData((prev) => ({
         ...prev,
-        projects: prev.projects.map(proj => 
-          proj.id === id ? { ...proj, ...project } : proj
-        )
+        projects: prev.projects.map((p) => (p.id === id ? { ...p, ...project } : p)),
       }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
-  const deleteProject = async (id) => {
+  const deleteProject = useCallback(async (id) => {
     try {
-      await firebaseService.deleteFromCollection('projects', id);
-      setData(prev => ({
+      await firebaseService.deleteFromCollection("projects", id);
+      setData((prev) => ({
         ...prev,
-        projects: prev.projects.filter(proj => proj.id !== id)
+        projects: prev.projects.filter((p) => p.id !== id),
       }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
-  const reorderProjects = async (newOrder) => {
+  const reorderProjects = useCallback(async (newOrder) => {
     try {
-      await firebaseService.batchUpdateOrder('projects', newOrder);
-      setData(prev => ({ ...prev, projects: newOrder }));
+      await firebaseService.batchUpdateOrder("projects", newOrder);
+      setData((prev) => ({ ...prev, projects: newOrder }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
   // Skills CRUD
-  const addSkillCategory = async (category) => {
+  const addSkillCategory = useCallback(async (category) => {
     try {
-      const newCat = await firebaseService.addToCollection('skills', {
+      const newCat = await firebaseService.addToCollection("skills", {
         ...category,
-        order: data.skills.length
+        order: data.skills.length,
       });
-      setData(prev => ({ ...prev, skills: [...prev.skills, newCat] }));
+      setData((prev) => ({ ...prev, skills: [...prev.skills, newCat] }));
       return newCat;
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, [data.skills.length]);
 
-  const updateSkillCategory = async (id, category) => {
+  const updateSkillCategory = useCallback(async (id, category) => {
     try {
-      await firebaseService.updateInCollection('skills', id, category);
-      setData(prev => ({
+      await firebaseService.updateInCollection("skills", id, category);
+      setData((prev) => ({
         ...prev,
-        skills: prev.skills.map(cat => 
-          cat.id === id ? { ...cat, ...category } : cat
-        )
+        skills: prev.skills.map((cat) => (cat.id === id ? { ...cat, ...category } : cat)),
       }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
-  const deleteSkillCategory = async (id) => {
+  const deleteSkillCategory = useCallback(async (id) => {
     try {
-      await firebaseService.deleteFromCollection('skills', id);
-      setData(prev => ({
+      await firebaseService.deleteFromCollection("skills", id);
+      setData((prev) => ({
         ...prev,
-        skills: prev.skills.filter(cat => cat.id !== id)
+        skills: prev.skills.filter((cat) => cat.id !== id),
       }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
   // Certifications CRUD
-  const addCertification = async (certification) => {
+  const addCertification = useCallback(async (certification) => {
     try {
-      const newCert = await firebaseService.addToCollection('certifications', {
+      const newCert = await firebaseService.addToCollection("certifications", {
         ...certification,
-        order: data.certifications.length
+        order: data.certifications.length,
       });
-      setData(prev => ({ ...prev, certifications: [...prev.certifications, newCert] }));
+      setData((prev) => ({ ...prev, certifications: [...prev.certifications, newCert] }));
       return newCert;
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, [data.certifications.length]);
 
-  const updateCertification = async (id, certification) => {
+  const updateCertification = useCallback(async (id, certification) => {
     try {
-      await firebaseService.updateInCollection('certifications', id, certification);
-      setData(prev => ({
+      await firebaseService.updateInCollection("certifications", id, certification);
+      setData((prev) => ({
         ...prev,
-        certifications: prev.certifications.map(cert => 
-          cert.id === id ? { ...cert, ...certification } : cert
-        )
+        certifications: prev.certifications.map((c) => (c.id === id ? { ...c, ...certification } : c)),
       }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
-  const deleteCertification = async (id) => {
+  const deleteCertification = useCallback(async (id) => {
     try {
-      await firebaseService.deleteFromCollection('certifications', id);
-      setData(prev => ({
+      await firebaseService.deleteFromCollection("certifications", id);
+      setData((prev) => ({
         ...prev,
-        certifications: prev.certifications.filter(cert => cert.id !== id)
+        certifications: prev.certifications.filter((c) => c.id !== id),
       }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
   // Education CRUD
-  const addEducation = async (education) => {
+  const addEducation = useCallback(async (education) => {
     try {
-      const newEdu = await firebaseService.addToCollection('education', {
+      const newEdu = await firebaseService.addToCollection("education", {
         ...education,
-        order: data.education.length
+        order: data.education.length,
       });
-      setData(prev => ({ ...prev, education: [...prev.education, newEdu] }));
+      setData((prev) => ({ ...prev, education: [...prev.education, newEdu] }));
       return newEdu;
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, [data.education.length]);
 
-  const updateEducation = async (id, education) => {
+  const updateEducation = useCallback(async (id, education) => {
     try {
-      await firebaseService.updateInCollection('education', id, education);
-      setData(prev => ({
+      await firebaseService.updateInCollection("education", id, education);
+      setData((prev) => ({
         ...prev,
-        education: prev.education.map(edu => 
-          edu.id === id ? { ...edu, ...education } : edu
-        )
+        education: prev.education.map((e) => (e.id === id ? { ...e, ...education } : e)),
       }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
-  const deleteEducation = async (id) => {
+  const deleteEducation = useCallback(async (id) => {
     try {
-      await firebaseService.deleteFromCollection('education', id);
-      setData(prev => ({
+      await firebaseService.deleteFromCollection("education", id);
+      setData((prev) => ({
         ...prev,
-        education: prev.education.filter(edu => edu.id !== id)
+        education: prev.education.filter((e) => e.id !== id),
       }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
-  // File upload
-  const uploadFile = async (file, path) => {
+  /**
+   * File upload (critical fix)
+   * - Ensures we pass a safe unique key if caller gives a "folder-like" path.
+   * - Ensures the return value is a *download URL* usable by <img src> and PDF link.
+   */
+    const uploadFile = useCallback(async (file, pathOrFolder) => {
     try {
-      return await firebaseService.uploadFile(file, path);
+      // If caller passes "profile/uuid.png" keep it; if caller passes "profile" generate the filename.
+      const raw = String(pathOrFolder || "uploads");
+      const looksLikeFullPath = raw.includes("/") && raw.split("/").pop()?.includes(".");
+      const path = looksLikeFullPath ? raw : buildSafePath(raw, file);
+
+      const result = await firebaseService.uploadFile(file, path);
+
+      // Your current firebase.service returns string URL, but support object too.
+      const url =
+        typeof result === "string"
+          ? result
+          : result?.url || result?.downloadURL;
+
+      if (!url || !/^https?:\/\//i.test(url)) {
+        throw new Error(
+          "Upload succeeded but no public download URL was returned. Check Firebase Storage rules and ensure uploadFile returns getDownloadURL()."
+        );
+      }
+
+      return url;
     } catch (err) {
-      setError(err.message);
+      console.error("uploadFile failed:", err);
+      setError(err?.message || String(err));
       throw err;
     }
-  };
+  }, []);
 
-  const value = {
-    ...data,
-    loading,
-    error,
-    isInitialized,
-    loadData,
-    initializeDatabase,
-    updateSettings,
-    updateProfile,
-    updateAbout,
-    updateContact,
-    addExperience,
-    updateExperience,
-    deleteExperience,
-    reorderExperience,
-    addProject,
-    updateProject,
-    deleteProject,
-    reorderProjects,
-    addSkillCategory,
-    updateSkillCategory,
-    deleteSkillCategory,
-    addCertification,
-    updateCertification,
-    deleteCertification,
-    addEducation,
-    updateEducation,
-    deleteEducation,
-    uploadFile
-  };
+  // Provide BOTH shapes: top-level + nested, so existing components don't break
+  const value = useMemo(
+    () => ({
+      ...data,              // settings, profile, etc. as top-level props
+      data,                 // also expose the whole object if any component expects data.profile
+      loading,
+      error,
+      isInitialized,
+      loadData,
+      initializeDatabase,
 
-  return (
-    <PortfolioContext.Provider value={value}>
-      {children}
-    </PortfolioContext.Provider>
+      updateSettings,
+      updateProfile,
+      updateAbout,
+      updateContact,
+
+      addExperience,
+      updateExperience,
+      deleteExperience,
+      reorderExperience,
+
+      addProject,
+      updateProject,
+      deleteProject,
+      reorderProjects,
+
+      addSkillCategory,
+      updateSkillCategory,
+      deleteSkillCategory,
+
+      addCertification,
+      updateCertification,
+      deleteCertification,
+
+      addEducation,
+      updateEducation,
+      deleteEducation,
+
+      uploadFile,
+    }),
+    [
+      data,
+      loading,
+      error,
+      isInitialized,
+      loadData,
+      initializeDatabase,
+      updateSettings,
+      updateProfile,
+      updateAbout,
+      updateContact,
+      addExperience,
+      updateExperience,
+      deleteExperience,
+      reorderExperience,
+      addProject,
+      updateProject,
+      deleteProject,
+      reorderProjects,
+      addSkillCategory,
+      updateSkillCategory,
+      deleteSkillCategory,
+      addCertification,
+      updateCertification,
+      deleteCertification,
+      addEducation,
+      updateEducation,
+      deleteEducation,
+      uploadFile,
+    ]
   );
+
+  return <PortfolioContext.Provider value={value}>{children}</PortfolioContext.Provider>;
 };

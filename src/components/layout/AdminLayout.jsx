@@ -195,112 +195,112 @@ export const AdminLayout = () => {
       </header>
 
       {/* Mobile Sidebar */}
-<AnimatePresence>
-  {mobileSidebarOpen && (
-    <>
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={() => setMobileSidebarOpen(false)}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] lg:hidden"
-        aria-hidden="true"
-      />
-
-      {/* Drawer */}
-      <motion.aside
-        initial={{ x: '-100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '-100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-[var(--bg-card)] border-r border-[var(--border-default)] z-[70] lg:hidden"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Admin navigation"
-      >
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-[var(--border-default)]">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-primary-500)] to-[var(--color-accent-500)] flex items-center justify-center shrink-0">
-                <span className="text-white font-bold">A</span>
-              </div>
-              <span className="font-display font-bold text-lg text-[var(--text-primary)] truncate">
-                Admin
-              </span>
-            </div>
-
-            <button
+      <AnimatePresence>
+        {mobileSidebarOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               onClick={() => setMobileSidebarOpen(false)}
-              className="p-2 rounded-lg hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)]"
-              type="button"
-              aria-label="Close sidebar"
-            >
-              <X size={20} />
-            </button>
-          </div>
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] lg:hidden"
+              aria-hidden="true"
+            />
 
-          {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto py-4 px-3">
-            <ul className="space-y-1">
-              {sidebarItems.map((item) => (
-                <li key={item.path}>
-                  <NavLink
-                    to={item.path}
+            {/* Drawer */}
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-[var(--bg-card)] border-r border-[var(--border-default)] z-[70] lg:hidden"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Admin navigation"
+            >
+              <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="flex items-center justify-between h-16 px-4 border-b border-[var(--border-default)]">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-primary-500)] to-[var(--color-accent-500)] flex items-center justify-center shrink-0">
+                      <span className="text-white font-bold">A</span>
+                    </div>
+                    <span className="font-display font-bold text-lg text-[var(--text-primary)] truncate">
+                      Admin
+                    </span>
+                  </div>
+
+                  <button
                     onClick={() => setMobileSidebarOpen(false)}
-                    className={({ isActive }) => `
-                      flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                      ${
-                        isActive
-                          ? 'bg-gradient-to-r from-[var(--color-primary-500)]/10 to-[var(--color-accent-500)]/10 text-[var(--color-primary-500)]'
-                          : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
-                      }
-                    `}
+                    className="p-2 rounded-lg hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)]"
+                    type="button"
+                    aria-label="Close sidebar"
                   >
-                    <item.icon size={20} className="shrink-0" />
-                    <span className="font-medium">{item.label}</span>
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
-          </nav>
+                    <X size={20} />
+                  </button>
+                </div>
 
-          {/* Bottom Actions */}
-          <div className="p-4 border-t border-[var(--border-default)] space-y-2">
-            <button
-              onClick={toggleTheme}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all"
-              type="button"
-            >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-              <span className="font-medium">Toggle Theme</span>
-            </button>
+                {/* Navigation */}
+                <nav className="flex-1 overflow-y-auto py-4 px-3">
+                  <ul className="space-y-1">
+                    {sidebarItems.map((item) => (
+                      <li key={item.path}>
+                        <NavLink
+                          to={item.path}
+                          onClick={() => setMobileSidebarOpen(false)}
+                          className={({ isActive }) => `
+                            flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+                            ${
+                              isActive
+                                ? 'bg-gradient-to-r from-[var(--color-primary-500)]/10 to-[var(--color-accent-500)]/10 text-[var(--color-primary-500)]'
+                                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
+                            }
+                          `}
+                        >
+                          <item.icon size={20} className="shrink-0" />
+                          <span className="font-medium">{item.label}</span>
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
 
-            <a
-              href="/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all"
-            >
-              <Home size={20} />
-              <span className="font-medium">View Site</span>
-            </a>
+                {/* Bottom Actions */}
+                <div className="p-4 border-t border-[var(--border-default)] space-y-2">
+                  <button
+                    onClick={toggleTheme}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all"
+                    type="button"
+                  >
+                    {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                    <span className="font-medium">Toggle Theme</span>
+                  </button>
 
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all"
-              type="button"
-            >
-              <LogOut size={20} />
-              <span className="font-medium">Logout</span>
-            </button>
-          </div>
-        </div>
-      </motion.aside>
-    </>
-  )}
-</AnimatePresence>
+                  <a
+                    href="/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all"
+                  >
+                    <Home size={20} />
+                    <span className="font-medium">View Site</span>
+                  </a>
+
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all"
+                    type="button"
+                  >
+                    <LogOut size={20} />
+                    <span className="font-medium">Logout</span>
+                  </button>
+                </div>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
 
       {/* Main Content - USE THE CSS VAR (guaranteed alignment) */}
