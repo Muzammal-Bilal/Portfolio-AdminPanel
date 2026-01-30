@@ -1,36 +1,53 @@
-# Muzammal Bilal - AI/ML Engineer Portfolio
+# 🚀 Muzammal Bilal — AI/ML Engineer Portfolio
 
-A modern, dynamic portfolio web application built with React, Vite, TailwindCSS, and Firebase. Features a complete admin panel for content management without code changes.
+A modern, full-stack portfolio web application built with **React, Vite, TailwindCSS, and Firebase**, featuring a **secure admin panel** for real-time content management — no code changes required.
+
+---
 
 ## ✨ Features
 
-### Public Site
-- **Responsive Design**: Mobile, tablet, and desktop optimized
-- **Dark/Light Mode**: Theme toggle with persistence
-- **Smooth Animations**: Framer Motion powered transitions
-- **SEO Optimized**: Meta tags, OpenGraph, and Twitter cards
-- **Fast Performance**: Code splitting, lazy loading, skeleton loaders
+### 🌐 Public Website
+- Responsive design (mobile, tablet, desktop)
+- Dark / Light mode with persistence
+- Smooth animations using Framer Motion
+- SEO optimized (Meta, OpenGraph, Twitter cards)
+- Fast performance with lazy loading & code splitting
 
-### Admin Panel
-- **Complete CRUD**: Create, Read, Update, Delete for all sections
-- **Drag & Drop**: Reorder experience and projects
-- **Publish Control**: Toggle visibility per item
-- **Image Upload**: Profile pictures, project images, certificates
-- **Rich Text**: HTML support for descriptions
-- **Real-time Updates**: Changes reflect immediately
+### 🔐 Admin Panel
+- Secure Firebase Authentication (Email/Password)
+- Full CRUD for all portfolio sections
+- Drag & Drop ordering (Experience & Projects)
+- Publish / Unpublish toggle
+- Image uploads (Profile, Projects, Certificates)
+- Rich text (HTML support)
+- Real-time updates (Firestore)
 
-## 🚀 Quick Start
+---
+
+## 🧩 Tech Stack
+
+- **Frontend:** React 19, Vite, TailwindCSS
+- **Backend:** Firebase (Auth, Firestore, Storage)
+- **UI & Animations:** Framer Motion, dnd-kit
+- **Utilities:** Lucide React, React Hot Toast
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 - Node.js 18+
 - Firebase account
 
-### 1. Clone & Install
+---
+
+## 1️⃣ Clone Repository
+
 ```bash
-git clone https://github.com/Muzammal-Bilal Portfolio-AdminPanel
-cd muzammal-portfolio
+git clone https://github.com/Muzammal-Bilal/Portfolio-AdminPanel.git
+cd Portfolio-AdminPanel
 npm install
-```
+
 
 ### 2. Firebase Setup
 
